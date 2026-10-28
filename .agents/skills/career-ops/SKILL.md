@@ -41,6 +41,27 @@ Run the career-ops pdf mode for the latest evaluated role.
 Run the career-ops tracker mode and summarize the current statuses.
 ```
 
+## Lightweight CV routing guard
+
+PRIORITY: When the explicitly requested mode is `cv-revise`,
+select that mode before opening any shared evaluation context.
+
+For a routing-only check:
+- Read this router and `modes/cv-revise.md`.
+- Do not actively open `modes/_shared.md`.
+- Do not read candidate data or execute CV tools.
+- Report the files actually opened, not those merely listed here.
+
+For actual `cv-revise` execution:
+- Load the required user profile and custom instructions.
+- Load `modes/cv-revise.md`.
+- Never load `_shared.md` as a dependency.
+- Never invoke `text`, `pdf`, `oferta` or `auto-pipeline`
+  unless separately and explicitly requested.
+
+These rules do not override factual accuracy, source-of-truth
+or application safety requirements.
+
 ## Mode Routing
 
 Determine the mode from `$mode`:
@@ -106,7 +127,7 @@ If `$mode` is not a sub-command AND doesn't look like a JD, show discovery.
 Before executing any mode, read `config/profile.yml` if it exists and resolve:
 
 - `language.output` → ISO language code for human-facing output. Default: `en`.
-- `language.modes_dir` → optional market-mode directory. This controls market vocabulary and local evaluation rules only. It may be a single string (one declared market, the historical default) or a list of declared candidate markets for a candidate genuinely running parallel campaigns in more than one market at once (#3793), e.g. `modes_dir: [modes/de, modes/zh]`. When a list is given, the FIRST entry is primary and supplies the evaluation-mode file (Block A-F rules can only run from one market's file at a time); EVERY declared market's `_shared.md` is loaded into context. `modes` itself is a valid declared candidate for markets without a localized directory; when first it supplies `modes/oferta.md`, and its baseline `modes/_shared.md` is loaded once. Per posting, judge which declared market actually applies from the JD's own MARKET signals (hiring-entity jurisdiction, currency, benefits/legal vocabulary) — never from the JD's language alone. If genuinely ambiguous, an interactive session asks and stops before persistence; an unattended worker uses the primary market and records that fallback in the report header or Block G.
+- `language.modes_dir` → optional market-mode directory. This controls market vocabulary and local evaluation rules only. It may be a single string (one declared market, the historical default) or a list of declared candidate markets for a candidate genuinely running parallel campaigns in more than one market at once (#3793), e.g. `modes_dir: [modes/de, modes/zh]`. When a list is given, the FIRST entry is primary and supplies the evaluation-mode file (Block A-F rules can only run from one market's file at a time); every declared market's `_shared.md` is loaded only for modes requiring shared evaluation context. `modes` itself is a valid declared candidate for markets without a localized directory; when first it supplies `modes/oferta.md`, and its baseline `modes/_shared.md` is loaded once. Per posting, judge which declared market actually applies from the JD's own MARKET signals (hiring-entity jurisdiction, currency, benefits/legal vocabulary) — never from the JD's language alone. If genuinely ambiguous, an interactive session asks and stops before persistence; an unattended worker uses the primary market and records that fallback in the report header or Block G.
 
 Inject this directive after loading the mode instructions and before producing any user-visible content:
 
@@ -207,7 +228,7 @@ After determining the mode, load the necessary files before executing:
 
 If `modes/_custom.md` exists, read it after `modes/_profile.md` and before the selected mode file. It contains user house rules and procedural preferences. It may override workflow/style defaults, but it never adds factual claims about the candidate.
 
-Resolve `language.modes_dir` before applying the path shorthand below. With no setting, use `modes`. With a scalar directory, preserve the existing behavior: use that directory's `_shared.md` and localized mode file when it provides one. With a list, load every declared directory's `_shared.md` exactly once (including the baseline `modes/_shared.md` when `modes` appears), but use only the FIRST entry's evaluation-mode file for Blocks A-F; later entries contribute context, never a competing evaluation file. User-layer `_profile.md` and `_custom.md` remain under `modes/` in `DATA_ROOT`.
+Resolve `language.modes_dir` before applying the path shorthand below. With no setting, use `modes`. With a scalar directory, preserve the existing behavior: use that directory's `_shared.md` and localized mode file when it provides one. With a list, for modes requiring shared context, load every declared directory's `_shared.md` exactly once (including the baseline `modes/_shared.md` when `modes` appears), but use only the FIRST entry's evaluation-mode file for Blocks A-F; later entries contribute context, never a competing evaluation file. User-layer `_profile.md` and `_custom.md` remain under `modes/` in `DATA_ROOT`.
 
 ### Modes that require `_shared.md` + their mode file
 
