@@ -51,7 +51,7 @@ def main():
     expected_text = body_text(original)
     operation = "COPY"
 
-    with tempfile.TemporaryDirectory(prefix="cv-revise-") as folder:
+    with tempfile.TemporaryDirectory(prefix="cv-revise-", dir=output.parent) as folder:
         temporary = Path(folder) / "candidate.docx"
 
         if args.old is None:
