@@ -1,0 +1,6 @@
+[mcp_servers.playwright]
+command = "cmd.exe"
+args = ["/d", "/c", "npx.cmd", "-y", "@playwright/mcp@latest", "--isolated", "--headless"]
+cwd = "C:/Users/Administrator/career-ops"
+enabled = true
+startup_timeout_sec = 60
