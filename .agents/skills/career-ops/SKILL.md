@@ -25,7 +25,7 @@ Resolve every path in this router against one of these two roots, never against 
 ## Invocation Notes
 
 - CLIs with slash-command registration can expose this router as `/career-ops`.
-- In Cursor, this skill lives at `.agents/skills/career-ops/` and is auto-discovered; ask for a mode by name, or paste a JD/URL to trigger auto-pipeline.
+- In Cursor, this skill lives at `.agents/skills/career-ops/` and is auto-discovered; ask for a mode by name, or paste a JD/URL to trigger triage. Run auto-pipeline only when explicitly requested.
 - In Pi, this skill is auto-discovered from `.agents/skills/career-ops/` and exposed as `/skill:career-ops`; `AGENTS.md` loads from the repo root as project context, so there is no wrapper file. Headless Pi workers use `pi -p "prompt"`. Project skill discovery follows Pi's per-folder trust decision: `/trust` applies to future Pi processes, so restart `pi` before invoking `/skill:career-ops` (`-a` trusts a single run and needs no restart).
 - Interactive Codex sessions use `codex` in the repo root. Slash commands are not guaranteed in Codex, so ask Codex to run the same mode by name if `/career-ops` is unavailable.
 - Headless Codex workers use `codex exec "prompt"`.
@@ -48,7 +48,8 @@ Determine the mode from `$mode`:
 | Input | Mode |
 |-------|------|
 | (empty / no args) | `discovery` -- Show command menu |
-| JD text or URL (no sub-command) | **`auto-pipeline`** |
+| JD text or URL (no sub-command) | **`triage`** |
+| `auto-pipeline` | `auto-pipeline` |
 | `oferta` | `oferta` |
 | `ofertas` | `ofertas` |
 | `contacto` | `contacto` |
@@ -93,7 +94,7 @@ Determine the mode from `$mode`:
 | `update` | `update` |
 | `cover` | `cover` |
 
-**Auto-pipeline detection:** If `$mode` is not a known sub-command AND contains JD text (keywords: "responsibilities", "requirements", "qualifications", "about the role", "we're looking for", company name + role) or a URL to a JD, execute `auto-pipeline`.
+**Triage-first detection:** If `$mode` is not a known sub-command AND contains JD text (keywords: "responsibilities", "requirements", "qualifications", "about the role", "we're looking for", company name + role) or a URL to a JD, execute `triage`. Explicit requests for `auto-pipeline` must continue to execute `auto-pipeline`. Never automatically promote a triage result to the full pipeline without the user's explicit request.
 
 If `$mode` is not a sub-command AND doesn't look like a JD, show discovery.
 
@@ -135,7 +136,7 @@ If your CLI supports `/career-ops`, show this menu. In Codex, surface the same o
 Concrete equivalents for Codex prompt-driven sessions:
 
 ```text
-/career-ops {JD}           ↔ "Evaluate this JD with career-ops auto-pipeline: {JD or URL}"
+/career-ops {JD}           ↔ "Run career-ops triage mode for: {JD or URL}"
 /career-ops scan           ↔ "Run the career-ops scan mode and summarize new matches."
 /career-ops pipeline       ↔ "Run the career-ops pipeline mode for data/pipeline.md."
 /career-ops pdf            ↔ "Run the career-ops pdf mode for the latest evaluated role."
@@ -149,7 +150,8 @@ Show this menu:
 career-ops -- AI Job Search Agent
 
 Available commands:
-  /career-ops {JD}      → AUTO-PIPELINE: evaluate + report + PDF + tracker (paste text or URL)
+  /career-ops {JD}      → TRIAGE: quick go/no-go score, no files written
+  /career-ops auto-pipeline {JD} → FULL PIPELINE: evaluate + report + PDF + tracker (explicit request only)
   /career-ops pipeline  → Process pending URLs from inbox (data/pipeline.md)
   /career-ops oferta    → Evaluation only A-F (no auto PDF)
   /career-ops ofertas   → Compare and rank multiple offers
@@ -192,7 +194,7 @@ Available commands:
   /career-ops update    → Update career-ops system files with diff preview + compat check
 
 Inbox: add URLs to data/pipeline.md → /career-ops pipeline
-Or paste a JD directly to run the full pipeline.
+Or paste a JD directly to run lightweight triage. Run auto-pipeline explicitly when a full evaluation, report, PDF and tracker update are required.
 ```
 
 ---
