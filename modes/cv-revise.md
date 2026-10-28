@@ -1,4 +1,4 @@
-﻿# Mode: cv-revise — Existing CV revision and Word export
+# Mode: cv-revise — Existing CV revision and Word export
 
 ## Purpose
 
@@ -60,3 +60,21 @@ Never automatically:
 - Submit applications or send messages.
 
 Report the output location, changes made and validation result.
+
+## Deterministic DOCX helper
+
+For existing approved DOCX files, use
+`scripts/cv_revise_docx.py` with an interpreter containing python-docx.
+
+- Copy only: --source PATH --output PATH
+- One exact-text revision: --source PATH --output PATH --old TEXT --new TEXT
+
+Copying preserves the document byte-for-byte.
+Exact-text revision requires a unique match within one Word text run.
+If that restriction is not met, stop rather than rebuilding the CV.
+
+Always preserve the approved source and use a separate output path.
+Verify factual changes against the primary career evidence.
+Do not claim that structural checks establish identical visual pagination.
+Do not invoke Microsoft Word COM automation, a new evaluation, or
+the application pipeline for this operation.
