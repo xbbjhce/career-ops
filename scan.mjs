@@ -81,6 +81,7 @@ import { sectionKind } from './lib/pipeline-sections.mjs';
 import { promoteKnownFragmentIdentity, LANGUAGE_PARAMS, languageSubtag } from './url-key.mjs';
 import { getCareerOpsRoot, getProfilePath, hasProfileOverride } from './path-resolver.mjs';
 import { checkLivenessViaApi } from './liveness-api.mjs';
+import { annotateTravel } from './lib/travel-signal.mjs';
 
 const CODE_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = getCareerOpsRoot();
@@ -3103,7 +3104,10 @@ export function formatPipelineOffer(offer) {
   // confusing it for a positional cell, and it stays generic: nothing here is
   // source-specific, and an offer without `note` produces byte-identical output.
   const note = typeof offer.note === 'string' ? sanitizeMarkdownField(offer.note) : '';
-  return note ? `${line} | note: ${note}` : line;
+  const travel = offer.travel?.level && ['High', 'Moderate', 'Low', 'Unknown'].includes(offer.travel.level)
+    ? sanitizeMarkdownField(`travel: ${offer.travel.level}${offer.travel.evidence?.length ? ` — ${offer.travel.evidence.join(' / ')}` : ''}`)
+    : '';
+  return [note ? `note: ${note}` : '', travel].filter(Boolean).reduce((result, segment) => `${result} | ${segment}`, line);
 }
 
 // postedAt arrives as epoch ms (or absent). Convert to 'YYYY-MM-DD', or '' when missing.
@@ -4691,6 +4695,9 @@ async function main() {
   for (const offer of verifiedOffers) {
     offer.fingerprint = fingerprintText(offer.description);
   }
+  // Travel is additive metadata only: preserve discovery ordering and suitability.
+  // Description coverage depends on the provider.
+  verifiedOffers = annotateTravel(verifiedOffers);
   // History rows come from the run-start snapshot: nothing has appended to
   // scan-history.tsv yet at this point in the run (all writes happen below),
   // so this sees the same bytes a re-read would — minus the third full parse.
@@ -4993,7 +5000,8 @@ async function main() {
         ? ` [Trust: ${o.trustScore}/100${o.trustFlags?.length ? ' — ' + o.trustFlags.join(', ') : ''}]`
         : '';
       const blacklistSuffix = o.blacklisted ? ' [BLACKLISTED — on your do-not-apply list]' : '';
-      console.log(`  + ${o.company} | ${o.title} | ${o.location || 'N/A'}${trustSuffix}${blacklistSuffix}`);
+      const travelSuffix = ` [Travel: ${o.travel?.level ?? 'Unknown'}${o.travel?.evidence?.[0] ? ` — ${o.travel.evidence[0]}` : ''}]`;
+      console.log(`  + ${o.company} | ${o.title} | ${o.location || 'N/A'}${travelSuffix}${trustSuffix}${blacklistSuffix}`);
     }
     if (dryRun) {
       console.log('\n(dry run — run without --dry-run to save results)');
