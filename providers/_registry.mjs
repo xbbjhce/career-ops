@@ -95,3 +95,29 @@ export function resolveProvider(entry, providers, { skipIds = [] } = {}) {
   }
   return null;
 }
+
+/**
+ * Resolve the scan-specific route for one configured source.
+ *
+ * An explicit provider remains authoritative. Otherwise an explicit
+ * `scan_method: websearch` is a handoff instruction and must be checked before
+ * automatic provider detection, so a supported-looking URL cannot silently
+ * turn a human/agent search source into an API fetch.
+ *
+ * @param {object} entry - portals.yml entry.
+ * @param {Map<string, object>} providers - Loaded provider registry.
+ * @returns {{method:'websearch',query:string}|{method:'provider',provider:object}|{method:'error',error:string}|{method:'unhandled'}}
+ */
+export function resolveScanRoute(entry, providers) {
+  if (entry?.scan_method === 'websearch' && !entry.provider) {
+    return {
+      method: 'websearch',
+      query: entry.scan_query || entry.search_query || entry.careers_url || '',
+    };
+  }
+
+  const resolved = resolveProvider(entry, providers);
+  if (!resolved) return { method: 'unhandled' };
+  if (resolved.error) return { method: 'error', error: resolved.error };
+  return { method: 'provider', provider: resolved.provider };
+}

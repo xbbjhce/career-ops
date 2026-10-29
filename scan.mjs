@@ -59,7 +59,7 @@ import { loadYaml } from './lib/yaml-document.mjs';
 
 import { makeHttpCtx } from './providers/_http.mjs';
 import { buildTrustValidator } from './providers/_trust-validator.mjs';
-import { loadProviders, resolveProvider } from './providers/_registry.mjs';
+import { loadProviders, resolveScanRoute } from './providers/_registry.mjs';
 import { mergeProviderPlugins } from './plugins/_engine.mjs';
 import { classifyFetchError } from './verify-portals.mjs';
 import { fingerprintText, findCrossListings } from './fingerprint-core.mjs';
@@ -4147,25 +4147,24 @@ async function main() {
       }
       if (filterCompany && !entry.name.toLowerCase().includes(filterCompany)) continue;
 
-      const resolved = resolveProvider(entry, providers);
-      if (!resolved) {
+      const route = resolveScanRoute(entry, providers);
+      if (route.method === 'unhandled') {
         skippedCount++;
-        if (entry.scan_method === 'websearch') {
-          agentHandoff.push({
-            company: entry.name,
-            method: 'websearch',
-            query: entry.scan_query || entry.search_query || entry.careers_url || '',
-          });
-        }
         continue;
       }
 
-      if (resolved.error) {
-        resolveErrors.push({ company: entry.name, error: resolved.error });
+      if (route.method === 'websearch') {
+        skippedCount++;
+        agentHandoff.push({ company: entry.name, method: 'websearch', query: route.query });
         continue;
       }
 
-      targets.push({ ...entry, _provider: resolved.provider, _isBoard: isBoard, _targetId: targets.length });
+      if (route.method === 'error') {
+        resolveErrors.push({ company: entry.name, error: route.error });
+        continue;
+      }
+
+      targets.push({ ...entry, _provider: route.provider, _isBoard: isBoard, _targetId: targets.length });
       if (isBoard) boardCount++;
     }
   }
